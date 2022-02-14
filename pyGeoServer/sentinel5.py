@@ -104,7 +104,7 @@ def getConfig(product):
     return product_config
 
 # get engine database
-def getEngine()
+def getEngine():
     url = "postgresql://" + app.config["USERNAME_PG"] + ":" + app.config["PASSWORD_PG"] + "@" + \
         app.config["POSTGRESQL"] + ":" + \
         str(app.config["PORT"]) + "/" + app.config["DATABASE"]
