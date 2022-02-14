@@ -92,16 +92,30 @@ def publishNetCDF(file, product):
     except requests.exceptions.HTTPError as err:
         return err
 
-# update postgis
-def update_postgis(path, product, bbox):
-
-    # read db parameters
+# get configuration product
+def getConfig(product):
+     # read db parameters
     parent_folder = pathlib.Path(__file__).parent.absolute()
     path_config = str(parent_folder) + "/config/" + product + ".json"
     f = open(path_config)
     product_config = json.load(f)
     f.close()
 
+    return product_config
+
+# get engine database
+def getEngine()
+    url = "postgresql://" + app.config["USERNAME_PG"] + ":" + app.config["PASSWORD_PG"] + "@" + \
+        app.config["POSTGRESQL"] + ":" + \
+        str(app.config["PORT"]) + "/" + app.config["DATABASE"]
+    engine = create_engine(url)
+    return engine
+
+# update postgis
+def update_postgis(path, product, bbox):
+
+    product_config = getConfig(product)
+    
     variables = product_config["variables"]
     print(variables)
 
@@ -133,10 +147,7 @@ def update_postgis(path, product, bbox):
         for attr in datas_prod.attrs:
             datas_prod[attr] = datas_prod.attrs[attr]
 
-        url = "postgresql://" + app.config["USERNAME_PG"] + ":" + app.config["PASSWORD_PG"] + "@" + \
-            app.config["POSTGRESQL"] + ":" + \
-            str(app.config["PORT"]) + "/" + app.config["DATABASE"]
-        engine = create_engine(url)
+        engine = getEngine()
 
         # create databrafe
         pdataf = datas_prod.to_dataframe().dropna()
@@ -289,6 +300,27 @@ def sentinel5P():
         download(ncFiles, product, bbox)
         
     return response
-    
 
+# get geojson from intersect geometry
+@app.route('/sentinel5p/<string:product>/<int:code>/<float:lat>/<float:lng>/<float:distance>')
+def index(product, code, lat, lng, distance):
+
+    product_config = getConfig(product)
+
+    df = None
+    # system reference
+    crs = "EPSG:" + str(code)
+    engine = getEngine()
+
+    sql = "SELECT * FROM" + app.config["SCHEMA"] + "." + product_config["table"] + " WHERE ST_Intersects('SRID=" + str(code) + ";POINT(" + lng + " " + lat + ")'::geometry)"
+    print(sql)
+    df = geopandas.read_postgis(
+        sql, 
+        con=engine, 
+        geom_col="geometry", 
+        crs=crs)
+
+    return df.to_json(na="drop", show_bbox=True)
+
+    
 
