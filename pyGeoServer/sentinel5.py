@@ -15,6 +15,7 @@ from sqlalchemy import *
 from sqlalchemy.engine import create_engine
 from sqlalchemy.schema import *
 import json
+import pathlib
 
 headersXML = {'Content-Type': 'application/xml'}
 headersJSON = {'Content-Type': 'application/json'}
@@ -94,7 +95,15 @@ def publishNetCDF(file, product):
 # update postgis
 def update_postgis(path, product, bbox):
 
-    variables = app.config[product]
+    # read db parameters
+    parent_folder = pathlib.Path(__file__).parent.absolute()
+    path_config = str(parent_folder) + "/config/" + product + ".json"
+    f = open(path_config)
+    product_config = json.load(f)
+    f.close()
+
+    variables = product_config["variables"]
+    print(variables)
 
     print('--- update postgis from ', path)
     datas = xr.open_mfdataset(path + "/*.nc",
@@ -113,10 +122,13 @@ def update_postgis(path, product, bbox):
     datas_q['delta_time'] = datas_q['delta_time'].astype(str)
 
     for variable in variables:
-    
+        
+        # add fields
         datas_prod = datas_q[variable]
         datas_prod['time_utc'] = datas_q['time_utc']
         datas_prod['delta_time'] = datas_q['delta_time']
+        datas_prod['platform'] = product_config["platform"]
+
         # copy attributes to dataframe
         for attr in datas_prod.attrs:
             datas_prod[attr] = datas_prod.attrs[attr]
@@ -140,7 +152,7 @@ def update_postgis(path, product, bbox):
             pdataf, geometry=s, crs=app.config["S5_CRS"])
             
         geopandas.sjoin(geodf_r, geodf_l).to_postgis(
-                variable,
+                product_config["table"],
                 engine,
                 schema=app.config["SCHEMA"],
                 if_exists="replace",
@@ -238,7 +250,7 @@ def download(ncFiles, product, bbox):
         pathFile = download_path + '/' + product + "_" + str(index_file) + ext
         files_downloaded.append(pathFile)
         # download dataset
-        run_download(ncFile, pathFile)
+        # run_download(ncFile, pathFile)
         index_file += 1
 
     #update postgis

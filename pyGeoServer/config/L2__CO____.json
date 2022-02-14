@@ -2,6 +2,6 @@
     "platform": "Sentinel-5 Precursor",
     "table": "carbonmonoxide",
     "description": "Carbon Monoxide (CO)",
-    "api": ["CO"],
-    "key": "carbonmonoxide_total_column_corrected"
+    "api": "CO",
+    "variables": ["carbonmonoxide_total_column_corrected"]
 }

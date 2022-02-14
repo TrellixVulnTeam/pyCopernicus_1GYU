@@ -19,3 +19,14 @@ curl -v -u admin:geoserver -XPUT \
     --data-binary @/my-netcdf-file.nc.zip \
     http://localhost/geoserver/rest/workspaces/test/coveragestores/myCoverageStore/file.netcdf?configure=none
 ```
+
+```
+curl --location --request POST '127.0.0.1:5000/sentinel5p' \
+--header 'Authorization: Basic YWRtaW46Z2Vvc2VydmVy' \
+--form 'xmin="40.873292"' \
+--form 'ymin="16.850661"' \
+--form 'xmax="40.742011"' \
+--form 'ymax="17.192127"' \
+--form 'product="CO"'
+```
+

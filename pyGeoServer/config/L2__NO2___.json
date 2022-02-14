@@ -2,7 +2,7 @@
     "platform": "Sentinel-5 Precursor",
     "name": "L2__NO2___",
     "table": "nitrogendioxide",
-    "key": "nitrogendioxide_tropospheric_column",
+    "variables": ["nitrogendioxide_tropospheric_column"],
     "description": "Nitrogen Dioxide (NO2)",
-    "api": ["NO2"]
+    "api": "NO2"
 }

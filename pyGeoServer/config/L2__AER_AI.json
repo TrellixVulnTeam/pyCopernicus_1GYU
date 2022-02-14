@@ -1,0 +1,7 @@
+{
+    "platform": "Sentinel-5 Precursor",
+    "table": "aerosol_340_380",
+    "variables": ["aerosol_index_340_380_precision","aerosol_index_354_388_precision"],
+    "description": "UV Aerosol Index",
+    "api": "AER"
+}
