@@ -2,3 +2,4 @@ downloads/
 uploads/
 __pycache__/
 pyGeoServer.egg-info/
+venv/

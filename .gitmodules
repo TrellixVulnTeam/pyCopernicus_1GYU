@@ -1,0 +1,3 @@
+[submodule "geoserver"]
+	path = geoserver
+	url = git@github.com:gzileni-copernicus/docker-copernicus.git
