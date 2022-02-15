@@ -1,0 +1,17 @@
+Flask
+geopandas
+xmltodict
+shapely
+attrs
+netCDF4
+SQLAlchemy
+geoserver-rest
+GeoAlchemy2
+xarray
+numpy
+pandas
+geopandas
+dask
+h5netcdf
+scipy
+pygeos

@@ -12,7 +12,7 @@ pip install -e .
 
 ## Esecuzione
 ```
-export FLASK_APP=pyGeoServer
+export FLASK_APP=pyCopernicus
 flask run
 ```
 
