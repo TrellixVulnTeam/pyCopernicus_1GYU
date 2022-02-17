@@ -12,3 +12,8 @@ def unZip(filezip, path):
         extracted = zip_ref.namelist()
         zip_ref.extractall(path)
     return os.path.join(path, extracted[0])
+
+# delete file downloaded
+def delete_folder(path):
+    for file in path:
+        os.remove(file)

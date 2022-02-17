@@ -1,5 +1,7 @@
 import json
 import pathlib
+from tabnanny import check
+import os
 
 from sqlalchemy import *
 from sqlalchemy.engine import create_engine
@@ -10,6 +12,8 @@ import xarray as xr
 import geopandas
 
 from pycopernicus import app
+
+file_checked = ''
 
 # get configuration product
 def getConfig(product):
@@ -30,15 +34,38 @@ def getEngine(app):
     engine = create_engine(url)
     return engine
 
+# check integrity file and removed 
+def check_integrity(path):
+    print('--- check integrity files ...')
+    global file_checked
+    try: 
+        for root, dirs, files in os.walk(path, topdown=False):
+            files.sort()
+            # check corrupted files
+            for f in files:
+                file_checked = os.path.join(root, f)
+                print('--- OK. check integrity to: ', file_checked)
+                datas = xr.open_dataset(file_checked,
+                                          engine="netcdf4",
+                                          group="PRODUCT",
+                                          decode_times=True,
+                                          decode_timedelta=True,
+                                          decode_coords=True,
+                                          parallel=True)
+    
+    except:
+        print('--- ERROR. check integrity to: ', file_checked)
+        os.remove(file_checked)
+
 # update postgis
 def send_ncfiles(app, path, product, bbox):
 
     product_config = getConfig(product)
-
     variables = product_config["variables"]
-    print(variables)
 
-    print('--- update postgis from ', path)
+    check_integrity(path)
+
+    print('--- update postgis from ', path + "/*.nc")
     datas = xr.open_mfdataset(path + "/*.nc",
                               engine="netcdf4",
                               group="PRODUCT",

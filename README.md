@@ -12,7 +12,7 @@ pip install -e .
 
 ## Esecuzione
 ```
-export FLASK_APP=pyCopernicus
+export FLASK_APP=pycopernicus
 flask run
 ```
 

@@ -1,7 +1,9 @@
 import shapely.geometry
+import os
 
 from flask import request
-from .datasets import download, getDatasets, delete_datasets
+from .functions import delete_folder
+from .datasets import download, getDatasets
 from .geoserver import publish_postgis
 from .postgis import send_ncfiles, get_GeoJSON
 
@@ -53,10 +55,18 @@ def sentinel5P():
     response["links"] = ncFiles
     
     if (len(ncFiles) > 0):
-        path = download(app, ncFiles, product)
-        vars = send_ncfiles(app, path, product, bbox)
+        # create download folder if not exists
+        pathFiles = os.path.abspath(
+            os.getcwd()) + '/' + app.config['DOWNLOAD_FOLDER'] + '/' + product
+        
+        if (not os.path.isdir(pathFiles)):
+            os.mkdir(pathFiles)
+        
+        print(pathFiles)
+        # download(app, pathFiles, ncFiles, product)
+        vars = send_ncfiles(app, pathFiles, product, bbox)
         response["geoserver"] = publish_postgis(app, vars)
-        delete_datasets(path)
+        # delete_folder(pathFiles)
         
     return response
 

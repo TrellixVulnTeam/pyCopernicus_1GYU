@@ -3,9 +3,6 @@ import os
 import xmltodict
 import json
 
-def getDownloadPath(app):
-      return os.path.abspath(os.getcwd()) + '/' + app.config['DOWNLOAD_FOLDER']
-
 # download
 def run(app, url, path):
     print("--- download: " + url)
@@ -33,14 +30,9 @@ def run(app, url, path):
 
 # ----------------------------------------------------------------
 # download file .nc
-def download(app, ncFiles, product):
+def download(app, path, ncFiles, product):
 
-      # create download folder if not exists
-      pathFiles = getDownloadPath(app) + '/' + product
-      if (not os.path.isdir(pathFiles)):
-            os.mkdir(pathFiles)
-
-      path, dirs, files = next(os.walk(pathFiles))
+      path, dirs, files = next(os.walk(path))
       ext = '.nc'
 
       print('--- downloading ' + str(len(ncFiles)) + ' files.')
@@ -51,12 +43,10 @@ def download(app, ncFiles, product):
       for ncFile in ncFiles:
             # ----------------------------------------------
             # download netcd file from sentinel hub
-            pathFile = pathFiles + '/' + product + "_" + str(index_file) + ext
+            pathFile = path + '/' + product + "_" + str(index_file) + ext
             # download dataset
             run(app, ncFile, pathFile)
             index_file += 1
-      
-      return pathFiles
 
 # create list's url download datasets from sentinel hub
 def getDatasets(app, url):
