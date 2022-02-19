@@ -1,9 +1,10 @@
 
 import zipfile
 import os
+import uuid
 
 # check file allowed to upload
-def allowed_file(filename):
+def allowed_file(app, filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
@@ -17,3 +18,22 @@ def unZip(filezip, path):
 def delete_folder(path):
     for file in path:
         os.remove(file)
+    os.rmdir(path)
+
+# create download files
+def create_download_folder(app, product):
+
+    pathFiles = os.path.abspath(
+            os.getcwd()) + '/' + app.config['DOWNLOAD_FOLDER'] + '/' + str(uuid.uuid4())
+
+    if (not os.path.isdir(pathFiles)):
+        os.mkdir(pathFiles)
+
+    pathFiles += "/" + product
+
+    if (not os.path.isdir(pathFiles)):
+        os.mkdir(pathFiles)
+
+    print('--- create download path: ', pathFiles)
+
+    return pathFiles

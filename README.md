@@ -15,6 +15,10 @@ pip install -e .
 export FLASK_APP=pycopernicus
 flask run
 ```
+or run script
+```
+./start.sh
+```
 
 ### Ambiente virtuale
 Bisogna utilizza un ambiente virtuale per gestire le dipendenze sia in fase di sviluppo che in produzione, affinchè si possa lavorare con diverse versioni delle librerie Python, o anche con lo stesso Python.

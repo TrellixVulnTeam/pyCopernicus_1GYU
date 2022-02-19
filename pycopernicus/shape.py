@@ -25,7 +25,7 @@ def upload_file():
         if file.filename == '':
             flash('No selected file')
             return redirect(request.url)
-        if file and allowed_file(file.filename):
+        if file and allowed_file(app, file.filename):
             filename = secure_filename(file.filename)
             # create uploads folder if not exists
             if (not os.path.isdir(uploads_path)):
