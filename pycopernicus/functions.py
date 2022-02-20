@@ -30,15 +30,15 @@ def delete_folder(path):
 # create download files
 def create_download_folder(app, product):
 
-    pathFiles = os.path.abspath(
+    rootpath = os.path.abspath(
             os.getcwd()) + '/' + app.config['DOWNLOAD_FOLDER'] + '/' + str(uuid.uuid4())
 
+    if (not os.path.isdir(rootpath)):
+        os.mkdir(rootpath)
+
+    pathFiles = rootpath + "/" + product
+
     if (not os.path.isdir(pathFiles)):
         os.mkdir(pathFiles)
 
-    pathFiles += "/" + product
-
-    if (not os.path.isdir(pathFiles)):
-        os.mkdir(pathFiles)
-
-    return pathFiles
+    return pathFiles, rootpath

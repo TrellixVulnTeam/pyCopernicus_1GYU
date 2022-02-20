@@ -9,6 +9,7 @@ from pycopernicus import app
 
 import logging 
 import datetime
+import os
 
 logging.basicConfig(filename='./logs/sentinel5p.log',
                     encoding='utf-8', level=logging.DEBUG)
@@ -37,7 +38,7 @@ def getProduct(product):
 
 # ----------------------------------------------------------------
 # POST /sentinel5P 
-@app.route('/sentinel5p', methods=['POST'])
+@app.route('/pollution', methods=['POST'])
 def sentinel5P():
 
     response = {
@@ -65,22 +66,26 @@ def sentinel5P():
     logging.info(str(datetime.datetime.now()) + ' - get datasets from ' + url)
 
     if (len(ncFiles) > 0):
+        # -----------------------------------------
         # create download folder if not exists
-        pathFiles = create_download_folder(app, product)
-        # -----------------
+        pathFiles, rootPath = create_download_folder(app, product)
+        # -----------------------------------------
         # download datasets
         download(app, pathFiles, ncFiles, product)
+        # -----------------------------------------
         # update postgis
         send_ncfiles(app, pathFiles, product, bbox)
+        # -----------------------------------------
         # delete datasets
         delete_folder(pathFiles)
+        os.rmdir(rootPath)
         
     return response
 
 # ----------------------------------------------------------------
 # get geojson from intersect geometry
 # GET /sentinel5p/<string:product>/<int:code>/<float:lat>/<float:lng>
-@app.route('/sentinel5p/<string:product>/<int:code>/<float:lat>/<float:lng>')
+@app.route('/<string:product>/<int:code>/<float:lat>/<float:lng>')
 def index(product, code, lat, lng):
     return get_GeoJSON(app, getProduct(product), code, lat, lng)
 
