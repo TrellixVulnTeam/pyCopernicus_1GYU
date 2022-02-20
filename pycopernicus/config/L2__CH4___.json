@@ -1,8 +1,0 @@
-{
-    "platform": "Sentinel-5 Precursor",
-    "name": "L2__CH4___",
-    "table": "methane",
-    "variables": ["methane_mixing_ratio"],
-    "description": "Methane (CH4)",
-    "api": "CH4"
-}

@@ -2,6 +2,8 @@
 import zipfile
 import os
 import uuid
+import logging
+import datetime
 
 # check file allowed to upload
 def allowed_file(app, filename):
@@ -16,9 +18,14 @@ def unZip(filezip, path):
 
 # delete file downloaded
 def delete_folder(path):
-    for file in path:
-        os.remove(file)
+    for root, dirs, files in os.walk(path, topdown=False):
+        files.sort()
+        # check corrupted files
+        for f in files:
+            os.remove(os.path.join(root, f))
     os.rmdir(path)
+    logging.info(str(datetime.datetime.now()) +
+                 ' -  delete datasets from : ' + path)
 
 # create download files
 def create_download_folder(app, product):
@@ -33,7 +40,5 @@ def create_download_folder(app, product):
 
     if (not os.path.isdir(pathFiles)):
         os.mkdir(pathFiles)
-
-    print('--- create download path: ', pathFiles)
 
     return pathFiles

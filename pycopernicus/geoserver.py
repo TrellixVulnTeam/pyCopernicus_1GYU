@@ -1,12 +1,13 @@
 import requests
+import logging
+import datetime
 
 headersXML = {'Content-Type': 'application/xml'}
 headersJSON = {'Content-Type': 'application/json'}
 
 # publish shape files
 def publish_shape(app, layer):
-    print('publishing shapefile to layer: ', layer)
-
+    
     try:
         payload = '<featureType><name>' + layer + '</name></featureType>'
         geos_response = requests.post(app.config["GEOSERVER"] + '/rest/workspaces/' + app.config["WORKSPACE"] + '/datastores/' + app.config["DATASTORE"] + '/featuretypes',
@@ -15,17 +16,18 @@ def publish_shape(app, layer):
                                       data=payload,
                                       headers=headersXML)
         if (geos_response.status_code == 200 or geos_response.status_code == 201):
-            print(geos_response.text)
+            logging.info(str(datetime.datetime.now()) +
+                    ' -  updated geoserver successfully by ' + payload)
 
     except requests.exceptions.HTTPError as err:
-        print(err)
+        logging.error(str(datetime.datetime.now()) +
+                ' -  requests.exceptions.HTTPError from geoserver : ' + err)
 
 # publish postgis table to GeoServer
 def publish_postgis(app, tables):
 
     for table in tables:
-        print('--- publishing postgis table to geoserver: ', table)
-
+        
         try:
             url = app.config["GEOSERVER"] + \
                 '/rest/workspaces/' + \
@@ -38,14 +40,16 @@ def publish_postgis(app, tables):
                                         data=payload,
                                         headers=headersXML)
             # curl - v - u admin: geoserver - X POST - H "Content-type: text/xml" - d "<featureType><name>lakes</name></featureType>" http: // localhost: 8080/geoserver/rest/workspaces/opengeo/datastores/pgstore/featuretypes
+            logging.info(str(datetime.datetime.now()) +
+                    ' -  updated geoserver successfully by ' + payload + ' - ' + geos_response.content)
             return geos_response.content
         except requests.exceptions.HTTPError as err:
+            logging.error(str(datetime.datetime.now()) +
+                    ' -  requests.exceptions.HTTPError: ' + err)
             return err
 
 # publish netcdf store to geoserver
 def publish_netcdf(app, path, file, product):
-
-    print('--- publishing NETCDF file to geoserver: ', file)
 
     try: 
         store = "sentinel5P" + "_" + product
@@ -67,6 +71,10 @@ def publish_netcdf(app, path, file, product):
                                             app.config["PASSWORD_GS"]),
                                       data=payload,
                                       headers=headersJSON)
+        logging.info(str(datetime.datetime.now()) +
+                ' -  updated geoserver successfully by ' + payload + ' - ' + geos_response.content)
         return geos_response.content
     except requests.exceptions.HTTPError as err:
+        logging.error(str(datetime.datetime.now()) +
+                ' -  requests.exceptions.HTTPError: ' + err)
         return err

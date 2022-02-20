@@ -1,7 +1,0 @@
-{
-    "platform": "Sentinel-5 Precursor",
-    "table": "sulfurdioxide",
-    "variables": ["sulfurdioxide_total_vertical_column"],
-    "description": "Sulfur Dioxide (SO2)",
-    "api": "SO2"
-}

@@ -1,13 +1,19 @@
 import shapely.geometry
-import os
 
 from flask import request
 from .functions import delete_folder, create_download_folder
 from .datasets import download, getDatasets
-from .geoserver import publish_postgis
 from .postgis import send_ncfiles, get_GeoJSON
 
 from pycopernicus import app
+
+import logging 
+import datetime
+
+logging.basicConfig(filename='./logs/sentinel5p.log',
+                    encoding='utf-8', level=logging.DEBUG)
+
+shapely.speedups.disable()
 
 # get footprint to query
 def getFootprint(bbox):
@@ -41,7 +47,7 @@ def sentinel5P():
     }
 
     bbox = [float(request.form['ymin']), float(request.form['xmin']), float(request.form['ymax']), float(request.form['xmax'])]
-    print(bbox)    
+    
     product = getProduct(request.form['product'])
 
     url = 'https://' + app.config["S5_URL"] + '/dhus/search?start=0&rows=100&q=' + app.config["S5_RANGE"] + \
@@ -55,7 +61,9 @@ def sentinel5P():
     response["status"] = status
     response["error"] = error
     response["links"] = ncFiles
-    
+
+    logging.info(str(datetime.datetime.now()) + ' - get datasets from ' + url)
+
     if (len(ncFiles) > 0):
         # create download folder if not exists
         pathFiles = create_download_folder(app, product)
@@ -63,9 +71,7 @@ def sentinel5P():
         # download datasets
         download(app, pathFiles, ncFiles, product)
         # update postgis
-        vars = send_ncfiles(app, pathFiles, product, bbox)
-        # public layer 
-        publish_postgis(app, vars)
+        send_ncfiles(app, pathFiles, product, bbox)
         # delete datasets
         delete_folder(pathFiles)
         

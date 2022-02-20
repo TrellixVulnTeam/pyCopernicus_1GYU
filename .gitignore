@@ -3,3 +3,5 @@ uploads/
 __pycache__/
 pyGeoServer.egg-info/
 venv/
+logs/
+pycopernicus/__pycache__

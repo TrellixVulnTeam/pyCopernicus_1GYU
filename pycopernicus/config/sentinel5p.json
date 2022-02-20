@@ -1,0 +1,40 @@
+{
+    "platform": "Sentinel-5 Precursor",
+    "L2__SO2___": {
+        "table": "sulfurdioxide",
+        "variables": ["sulfurdioxide_total_vertical_column"],
+        "description": "Sulfur Dioxide (SO2)",
+        "api": "SO2"
+    },
+    "L2__NO2___": {
+        "name": "L2__NO2___",
+        "table": "nitrogendioxide",
+        "variables": ["nitrogendioxide_tropospheric_column"],
+        "description": "Nitrogen Dioxide (NO2)",
+        "api": "NO2"
+    },
+    "L2__HCHO__": {
+        "table": "formaldehyde",
+        "variables": ["formaldehyde_tropospheric_vertical_column"],
+        "description": "Formaldehyde (HCHO)",
+        "api": "HCHO"
+    },
+    "L2__CO____": {
+        "table": "carbonmonoxide",
+        "description": "Carbon Monoxide (CO)",
+        "api": "CO",
+        "variables": ["carbonmonoxide_total_column_corrected"]
+    },
+    "L2__CH4___": {
+        "table": "methane",
+        "variables": ["methane_mixing_ratio"],
+        "description": "Methane (CH4)",
+        "api": "CH4"
+    },
+    "L2__AER_AI": {
+        "table": "aerosol_340_380",
+        "variables": ["aerosol_index_340_380_precision", "aerosol_index_354_388_precision"],
+        "description": "UV Aerosol Index",
+        "api": "AER"
+    }
+}
