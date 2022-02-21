@@ -11,23 +11,15 @@ import os
 
 # get product to select dataset
 def getProduct(product):
-    if (product == 'CO'):
-        return 'L2__CO____'
-    elif (product == 'NO2'):
-        return 'L2__NO2___'
-    elif (product == 'SO2'):
-        return 'L2__SO2___'
-    elif (product == 'CH4'):
-        return 'L2__CH4___'
-    elif (product == 'HCHO'):
-        return 'L2__HCHO__'
-    elif (product == 'AER'):
-        return 'L2__AER_AI'
+    if (product == 'NDVI1'):
+        return 'SY_2_VG1___'
+    elif (product == 'NDVI10'):
+        return 'SY_2_V10___'
 
 # ----------------------------------------------------------------
-# POST /sentinel5P 
-@app.route('/pollution', methods=['POST'])
-def sentinel5P():
+# POST /sentinel3 
+@app.route('/vegetation', methods=['POST'])
+def sentinel3():
 
     response = {
         "status": "",
@@ -39,14 +31,14 @@ def sentinel5P():
     
     product = getProduct(request.form['product'])
 
-    url = 'https://' + app.config["S5_URL"] + '/dhus/search?start=0&rows=100&q=' + app.config["S5_RANGE"] + \
-        ' AND platformname:Sentinel-5 Precursor' + \
+    url = 'https://' + app.config["S3_URL"] + '/dhus/search?start=0&rows=100&q=' + app.config["S3_RANGE"] + \
+        ' AND platformname:Sentinel-3' + \
         ' AND producttype:' + product + \
         ' AND ' + getFootprint(bbox)
     
     # get url datasets
     ncFiles, error, status = getDatasets(
-        app, url, app.config["S5_USERNAME"], app.config["S5_PASSWORD"])
+        app, url, app.config["S3_USERNAME"], app.config["S3_PASSWORD"])
 
     response["status"] = status
     response["error"] = error
@@ -54,29 +46,33 @@ def sentinel5P():
 
     logging.info(str(datetime.datetime.now()) + ' - get datasets from ' + url)
 
+    print(ncFiles)
+    
     if (len(ncFiles) > 0):
         # -----------------------------------------
         # create download folder if not exists
         pathFiles, rootPath = create_download_folder(app, product)
         # -----------------------------------------
         # download datasets
-        download(app, pathFiles, ncFiles, product, '.nc',
-                 app.config["S5_USERNAME"], app.config["S5_PASSWORD"])
+        download(app, 
+                 pathFiles, 
+                 ncFiles, 
+                 product, 
+                 '.zip',
+                 app.config["S3_USERNAME"], 
+                 app.config["S3_PASSWORD"])
         # -----------------------------------------
         # update postgis
-        send_ncfiles(app, pathFiles, product, bbox)
+        # send_ncfiles(app, pathFiles, product, bbox)
         # -----------------------------------------
         # delete datasets
-        delete_folder(pathFiles)
-        os.rmdir(rootPath)
+        # delete_folder(pathFiles)
+        # os.rmdir(rootPath)
         
     return response
 
-# ----------------------------------------------------------------
-# get geojson from intersect geometry
-# GET /sentinel5p/<string:product>/<int:code>/<float:lat>/<float:lng>
-@app.route('/pollution/<string:product>/<int:code>/<float:lat>/<float:lng>', methods=['GET'])
-def sentinel5P_geojson(product, code, lat, lng):
+@app.route('/vegetation/<string:product>/<int:code>/<float:lat>/<float:lng>', methods=['GET'])
+def sentinel3_geojson(product, code, lat, lng):
     return get_GeoJSON(app, getProduct(product), code, lat, lng)
 
 

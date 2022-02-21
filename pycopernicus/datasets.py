@@ -1,13 +1,20 @@
 import requests
 import os
-import xmltodict
-import json
 import logging
 import datetime
 import xml.etree.ElementTree as ET
+import shapely.geometry
+import zipfile
+
+shapely.speedups.disable()
+
+# get footprint to query
+def getFootprint(bbox):
+    polygon = shapely.geometry.box(*bbox, ccw=True)
+    return 'footprint:"Intersects(' + str(polygon) + ')"'
 
 # download
-def run(app, url, path):
+def run(app, url, path, username, password, unzip, product, index):
       
       netCDFile = open(path, "wb")
       try:
@@ -15,22 +22,24 @@ def run(app, url, path):
             fileNC = requests.get(url,
                                   timeout=120,
                                   verify=True,
-                                  auth=(app.config["S5_USERNAME"],
-                                        app.config["S5_PASSWORD"]),
+                                  auth=(username,
+                                        password),
                                   stream=True)
-            total_size = int(fileNC.headers.get('content-length'))
-            chunks = 0
             for chunk in fileNC.iter_content(chunk_size=app.config["CHUNKSIZE"]):
-                  if chunk:
-                        chunks += 1
-                        downloaded = chunks * app.config["CHUNKSIZE"]
-                        # An approximation as the chunks don't have to be 512 bytes
-                        progress = int((downloaded/total_size)*100)
-                        netCDFile.write(chunk)
+                  # An approximation as the chunks don't have to be 512 bytes
+                  netCDFile.write(chunk)
             netCDFile.close()
-            logging.info(str(datetime.datetime.now()) +
-                    ' -  Download NETCD datasets Ok to ' + path)
-            return True
+
+            if (unzip):
+                  dirUnzip = str(path) + '/' + product + "_" + str(index)
+                  # unzip files
+                  with zipfile.ZipFile(path, 'r') as zip_ref:
+                        zip_ref.extractall(dirUnzip)
+                  return dirUnzip
+            else:
+                  logging.info(str(datetime.datetime.now()) +
+                        ' -  Download NETCD datasets Ok to ' + path)
+                  return path
       except requests.ReadTimeout:
             logging.error(str(datetime.datetime.now()) +
                         ' -  Readtimeout from : ' + url)
@@ -42,11 +51,10 @@ def run(app, url, path):
 
 # ----------------------------------------------------------------
 # download file .nc
-def download(app, path, ncFiles, product):
+def download(app, path, ncFiles, product, ext, username, password):
 
       path, dirs, files = next(os.walk(path))
-      ext = '.nc'
-
+      
       logging.info(str(datetime.datetime.now()) + ' - ' +
               ' start downloading from ' + product + ' to ' + path)
 
@@ -58,7 +66,7 @@ def download(app, path, ncFiles, product):
             pathFile = path + '/' + product + "_" + str(index_file) + ext
 
             # download dataset
-            run(app, ncFile, pathFile)
+            run(app, ncFile, pathFile, username, password, ext == '.zip', product, index_file)
             index_file += 1
 
 # parse xml response from copernicus
@@ -84,18 +92,17 @@ def parseXML(xmlfile):
       return linkitems
 
 # create list's url download datasets from sentinel hub
-def getDatasets(app, url):
+def getDatasets(app, url, username, password):
 
       try:
             # ----------------------------------------------
             # request HTTP GET data
-            response = requests.get(url, verify=True, stream=True, timeout=120, auth=(app.config["S5_USERNAME"],
-                                                                                    app.config["S5_PASSWORD"]))
+            response = requests.get(url, verify=True, stream=True, timeout=120, auth=(username, password))
             if (response.status_code == 200):
                   return parseXML(response.content), True, 200
             else:
                   logging.warning(str(datetime.datetime.now()) +
-                        ' -  Status Code : ' + response.status_code + ' from ' + url)
+                        ' -  Status Code : ' + str(response.status_code) + ' from ' + url)
                   response.raise_for_status()
                   return [], True, response.status_code
       except requests.ReadTimeout:

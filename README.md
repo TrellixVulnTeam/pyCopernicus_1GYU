@@ -37,16 +37,6 @@ per ambiente Windows invece:
 py -3 -m venv venv
 ```
 
-```
-curl --location --request POST '127.0.0.1:5000/sentinel5p' \
---header 'Authorization: Basic YWRtaW46Z2Vvc2VydmVy' \
---form 'xmin="40.873292"' \
---form 'ymin="16.850661"' \
---form 'xmax="40.742011"' \
---form 'ymax="17.192127"' \
---form 'product="CO"'
-```
-
 ## Docker
 
 

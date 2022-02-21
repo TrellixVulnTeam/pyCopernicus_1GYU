@@ -1,0 +1,15 @@
+{
+    "platform": "Sentinel-3",
+    "SY_2_VG1___": {
+        "description": "1 km VEGETATION 1day synthesys surface reflectances and NDVI",
+        "files": ["NDVI,nc", "TOA_NDVI.nc"],
+        "table": "ndvi1",
+        "api": "ndvi1"
+    },
+    "SY_2_V10___": {
+        "description": "1 km VEGETATION 10days synthesys surface reflectances and NDVI",
+        "files": ["NDVI.nc", "TOA_NDVI.nc"],
+        "table": "ndvi10",
+        "api": "ndvi10"
+    }
+}
