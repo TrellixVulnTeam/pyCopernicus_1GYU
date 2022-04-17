@@ -133,10 +133,10 @@ def send_ncfiles(app, path, product, bbox):
                 # update db
                 print(geodf.head(5))
                 geodf.to_postgis(product_config["table"],
-                                engine,
-                                schema=app.config["SCHEMA"],
-                                if_exists="append",
-                                chunksize=app.config["CHUNKSIZE"])
+                                 engine,
+                                 schema=app.config["SCHEMA_DB"],
+                                 if_exists="append",
+                                 chunksize=app.config["CHUNKSIZE"])
                 msg = 'update postgis OK.'
                 logging.info(msg)
                 print(msg)

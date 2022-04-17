@@ -1,12 +1,14 @@
 # Sentinel 5P
 
+## Update GeoServer
 ```
-curl --location --request POST '127.0.0.1:5000/sentinel5p' \
---form 'xmin="40.873292"' \
---form 'ymin="16.850661"' \
---form 'xmax="40.742011"' \
---form 'ymax="17.192127"' \
---form 'product="CO"'
+curl --location --request POST 'http://127.0.0.1:5001/pollution' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'product=CO' \
+--data-urlencode 'xmin=15.6285' \
+--data-urlencode 'ymin=39.7264' \
+--data-urlencode 'xmax=18.5742' \
+--data-urlencode 'ymax=41.9840'
 ```
 
 zona geografica indicata dalle coordinate nel sistema di riferimento EPSG:4326 bbox:
@@ -22,16 +24,5 @@ dove i prodotti che possiamo indicare sono:
 - CH4: Methane (CH4)
 - HCHO: Formaldehyde (HCHO)
 - AER: UV Aerosol Index
-
-
-```
-curl --location --request POST '127.0.0.1:5000/vegetation' \
---header 'Authorization: Basic YWRtaW46Z2Vvc2VydmVy' \
---form 'xmin="40.873292"' \
---form 'ymin="16.850661"' \
---form 'xmax="40.742011"' \
---form 'ymax="17.192127"' \
---form 'product="NDVI1"'
-```
 
 
