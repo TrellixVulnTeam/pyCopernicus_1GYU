@@ -29,47 +29,67 @@ def getProduct(product):
 @app.route('/pollution', methods=['POST'])
 def sentinel5P():
 
+    #test = False
+    start = 0
+    end = False
+
     response = {
-        "status": "",
-        "error": "",
+        "status": [],
+        "error": [],
         "links": []
     }
 
-    bbox = [float(request.form['ymin']), float(request.form['xmin']), float(request.form['ymax']), float(request.form['xmax'])]
-    
     product = getProduct(request.form['product'])
 
-    url = 'https://' + app.config["S5_URL"] + '/dhus/search?start=0&rows=100&q=' + app.config["S5_RANGE"] + \
-        ' AND platformname:Sentinel-5 Precursor' + \
-        ' AND producttype:' + product + \
-        ' AND ' + getFootprint(bbox)
+    bbox = (float(request.form['xmin']), float(request.form['ymin']),
+            float(request.form['xmax']), float(request.form['ymax']))
+
+    while end==False:
+        # TODO: loop to page loading 
+        url = 'https://' + app.config["S5_URL"] + '/dhus/search?start=' + str(start) + '&rows=100&q=' + app.config["S5_RANGE"] + \
+            ' AND platformname:Sentinel-5 Precursor' + \
+            ' AND producttype:' + product + \
+            ' AND ' + getFootprint(bbox)
+
+        #if (test == True):
+        #    print('product:' + product)
+        #    pathFiles = '/Users/gzileni/Git/pyCopernicus/downloads/e1ca1af2-03ea-4912-b383-006e749ccfb1/L2__CO____/'
+        #    send_ncfiles(app, pathFiles, product, bbox)
+        #    return {
+        #        'test': 'Ok'
+        #    }
+        #else:
+
+        # get url datasets
+        ncFiles, error, status = getDatasets(
+            app, url, app.config["S5_USERNAME"], app.config["S5_PASSWORD"])
+
+        response["status"].append(status)
+        response["error"].append(error)
+        response["links"].append(ncFiles)
+
+        logging.info(str(datetime.datetime.now()) + ' - get datasets from ' + url)
+
+        if (len(ncFiles) > 0):
+            # -----------------------------------------
+            # create download folder if not exists
+            pathFiles, rootPath = create_download_folder(app, product)
+            # -----------------------------------------
+            # download datasets
+            download(app, pathFiles, ncFiles, product, '.nc',
+                    app.config["S5_USERNAME"], app.config["S5_PASSWORD"])
+            # -----------------------------------------
+            # update postgis
+            send_ncfiles(app, pathFiles, product, bbox)
+            # -----------------------------------------
+            # delete datasets
+            delete_folder(pathFiles)
+            os.rmdir(rootPath)
+            
+            start += 101
+        else:
+            end = True
     
-    # get url datasets
-    ncFiles, error, status = getDatasets(
-        app, url, app.config["S5_USERNAME"], app.config["S5_PASSWORD"])
-
-    response["status"] = status
-    response["error"] = error
-    response["links"] = ncFiles
-
-    logging.info(str(datetime.datetime.now()) + ' - get datasets from ' + url)
-
-    if (len(ncFiles) > 0):
-        # -----------------------------------------
-        # create download folder if not exists
-        pathFiles, rootPath = create_download_folder(app, product)
-        # -----------------------------------------
-        # download datasets
-        download(app, pathFiles, ncFiles, product, '.nc',
-                 app.config["S5_USERNAME"], app.config["S5_PASSWORD"])
-        # -----------------------------------------
-        # update postgis
-        send_ncfiles(app, pathFiles, product, bbox)
-        # -----------------------------------------
-        # delete datasets
-        delete_folder(pathFiles)
-        os.rmdir(rootPath)
-        
     return response
 
 # ----------------------------------------------------------------

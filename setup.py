@@ -9,6 +9,6 @@ setup(
     zip_safe=False,
     install_requires=['Flask', 'geopandas', 'xmltodict', 'shapely', 
                       'attrs', 'netCDF4', 'SQLAlchemy', 'geoserver-rest', 
-                      'GeoAlchemy2', 'xarray', 'numpy', 'pandas', 
+                      'GeoAlchemy2', 'xarray', 'numpy', 'pandas', 'requests', 
                       'geopandas', 'dask', 'h5netcdf', 'scipy', 'pygeos']
 )

@@ -1,5 +1,5 @@
 
-# pyGeoServer
+# pyCopernicus
 REST API per la gestione di un GeoServer per l'applicazione SIT-WG
 
 ## Installazione

@@ -54,9 +54,10 @@ def run(app, url, path, username, password, unzip, product, index):
 def download(app, path, ncFiles, product, ext, username, password):
 
       path, dirs, files = next(os.walk(path))
-      
-      logging.info(str(datetime.datetime.now()) + ' - ' +
-              ' start downloading from ' + product + ' to ' + path)
+      msg = str(datetime.datetime.now()) + ' -  start downloading from ' + product + ' to ' + path
+      logging.info(msg)
+      print(msg)
+      print('------------------------------')
 
       index_file = 1
       ncFiles.sort()
@@ -64,6 +65,7 @@ def download(app, path, ncFiles, product, ext, username, password):
             # ----------------------------------------------
             # download netcd file from sentinel hub
             pathFile = path + '/' + product + "_" + str(index_file) + ext
+            print('Downloading: ' + pathFile)
 
             # download dataset
             run(app, ncFile, pathFile, username, password, ext == '.zip', product, index_file)

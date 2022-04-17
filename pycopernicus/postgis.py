@@ -56,12 +56,14 @@ def check_integrity(path):
                                           decode_timedelta=True,
                                           decode_coords=True,
                                           parallel=True)
-        logging.info(str(datetime.datetime.now()) +
-                ' -  Check integrity file NETCD OK by ' + path)
-    
+                msg = str(datetime.datetime.now()) + ' -  Check integrity file NETCD OK by ' + file_checked
+                print(msg)
+                logging.info(msg)
+        
     except:
-        logging.error(str(datetime.datetime.now()) +
-                ' -  ERROR. check integrity to: ' + file_checked)
+        msg = str(datetime.datetime.now()) + ' -  ERROR. check integrity to: ' + file_checked
+        print(msg)
+        logging.error(msg)
         os.remove(file_checked)
 
 # update postgis
@@ -71,6 +73,7 @@ def send_ncfiles(app, path, product, bbox):
     product_config = config[product]
     variables = product_config["variables"]
 
+    # check integrity files
     check_integrity(path)
 
     with dask.config.set(**{'array.slicing.split_large_chunks': True}):
@@ -128,12 +131,15 @@ def send_ncfiles(app, path, product, bbox):
                 # update db to schema warning with all coordinates
                 geodf = geopandas.sjoin(geodf_r, geodf_l)
                 # update db
+                print(geodf.head(5))
                 geodf.to_postgis(product_config["table"],
                                 engine,
                                 schema=app.config["SCHEMA"],
                                 if_exists="append",
                                 chunksize=app.config["CHUNKSIZE"])
-                logging.info('update postgis OK.')
+                msg = 'update postgis OK.'
+                logging.info(msg)
+                print(msg)
         except:
             logging.error('Error to open path ' + path)
 
