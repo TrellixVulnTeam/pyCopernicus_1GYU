@@ -76,11 +76,16 @@ def sentinel5P():
             pathFiles, rootPath = create_download_folder(app, product)
             # -----------------------------------------
             # download datasets
-            download(app, pathFiles, ncFiles, product, '.nc',
-                    app.config["S5_USERNAME"], app.config["S5_PASSWORD"])
+            download(app, 
+                     pathFiles, 
+                     ncFiles, product, 
+                     '.nc',
+                     app.config["S5_USERNAME"], 
+                     app.config["S5_PASSWORD"],
+                     bbox)
             # -----------------------------------------
             # update postgis
-            send_ncfiles(app, pathFiles, product, bbox)
+            #send_ncfiles(app, pathFiles, product, bbox)
             # -----------------------------------------
             # delete datasets
             delete_folder(pathFiles)

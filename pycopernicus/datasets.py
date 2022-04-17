@@ -5,6 +5,9 @@ import datetime
 import xml.etree.ElementTree as ET
 import shapely.geometry
 import zipfile
+import sys
+
+from .postgis import send_ncfiles
 
 shapely.speedups.disable()
 
@@ -14,9 +17,10 @@ def getFootprint(bbox):
     return 'footprint:"Intersects(' + str(polygon) + ')"'
 
 # download
-def run(app, url, path, username, password, unzip, product, index):
+def run(app, url, f, username, password, unzip, product, index, path, bbox):
       
-      netCDFile = open(path, "wb")
+      result = ''
+      netCDFile = open(f, "wb")
       try:
             # get .nc files from datahub if don't exist
             fileNC = requests.get(url,
@@ -25,8 +29,14 @@ def run(app, url, path, username, password, unzip, product, index):
                                   auth=(username,
                                         password),
                                   stream=True)
+            total_length = int(fileNC.headers.get('content-length'))
+            dl=0
             for chunk in fileNC.iter_content(chunk_size=app.config["CHUNKSIZE"]):
                   # An approximation as the chunks don't have to be 512 bytes
+                  dl += len(chunk)
+                  done = int(50 * dl / total_length)
+                  sys.stdout.write("\r[%s%s]" % ('=' * done, ' ' * (50-done)))
+                  sys.stdout.flush()
                   netCDFile.write(chunk)
             netCDFile.close()
 
@@ -35,11 +45,18 @@ def run(app, url, path, username, password, unzip, product, index):
                   # unzip files
                   with zipfile.ZipFile(path, 'r') as zip_ref:
                         zip_ref.extractall(dirUnzip)
-                  return dirUnzip
+                  result = dirUnzip
             else:
                   logging.info(str(datetime.datetime.now()) +
                         ' -  Download NETCD datasets Ok to ' + path)
-                  return path
+                  result = path
+
+            # -----------------------------------------
+            # update postgis
+            send_ncfiles(app, f, product, bbox)
+
+            return result
+
       except requests.ReadTimeout:
             logging.error(str(datetime.datetime.now()) +
                         ' -  Readtimeout from : ' + url)
@@ -51,10 +68,11 @@ def run(app, url, path, username, password, unzip, product, index):
 
 # ----------------------------------------------------------------
 # download file .nc
-def download(app, path, ncFiles, product, ext, username, password):
+def download(app, path, ncFiles, product, ext, username, password, bbox):
 
       path, dirs, files = next(os.walk(path))
-      msg = str(datetime.datetime.now()) + ' -  start downloading from ' + product + ' to ' + path
+      print('------------------------------')
+      msg = str(datetime.datetime.now()) + '\nstart downloading from ' + product + ' to ' + path
       logging.info(msg)
       print(msg)
       print('------------------------------')
@@ -65,10 +83,20 @@ def download(app, path, ncFiles, product, ext, username, password):
             # ----------------------------------------------
             # download netcd file from sentinel hub
             pathFile = path + '/' + product + "_" + str(index_file) + ext
-            print('Downloading: ' + pathFile)
+            print('\nDownloading: ' + pathFile, end="\n")
 
             # download dataset
-            run(app, ncFile, pathFile, username, password, ext == '.zip', product, index_file)
+            run(app, 
+                ncFile, 
+                pathFile,
+                username,
+                password, 
+                ext == '.zip', 
+                product, 
+                index_file,
+                path,
+                bbox)
+
             index_file += 1
 
 # parse xml response from copernicus

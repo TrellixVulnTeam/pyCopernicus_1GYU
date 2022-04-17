@@ -14,6 +14,11 @@ import dask
 import logging
 import datetime
 
+# ----------------------------
+# Info:
+# https://medium.com/@robertbracco1/how-to-write-a-telegram-bot-to-send-messages-with-python-bcdf45d0a580
+import telegram_send
+
 shapely.speedups.disable()
 
 from pycopernicus import app
@@ -40,31 +45,34 @@ def getEngine(app):
     engine = create_engine(url)
     return engine
 
-# check integrity file and removed 
-def check_integrity(path):
-    global file_checked
-    try: 
-        for root, dirs, files in os.walk(path, topdown=False):
-            files.sort()
-            # check corrupted files
-            for f in files:
-                file_checked = os.path.join(root, f)
-                datas = xr.open_dataset(file_checked,
-                                          engine="netcdf4",
-                                          group="PRODUCT",
-                                          decode_times=True,
-                                          decode_timedelta=True,
-                                          decode_coords=True,
-                                          parallel=True)
-                msg = str(datetime.datetime.now()) + ' -  Check integrity file NETCD OK by ' + file_checked
-                print(msg)
-                logging.info(msg)
-        
+# check integrity file
+def check_integrity_file(f):
+    try:
+        datas = xr.open_dataset(f,
+                                engine="netcdf4",
+                                group="PRODUCT",
+                                decode_times=True,
+                                decode_timedelta=True,
+                                decode_coords=True,
+                                parallel=True)
+        msg = '\n' + str(datetime.datetime.now()) + \
+            ' -  Check integrity file NETCD OK by ' + file_checked
+        print(msg)
+        logging.info(msg)
     except:
-        msg = str(datetime.datetime.now()) + ' -  ERROR. check integrity to: ' + file_checked
+        msg = '\n' + str(datetime.datetime.now()) + \
+            ' -  ERROR. check integrity to: ' + file_checked
         print(msg)
         logging.error(msg)
-        os.remove(file_checked)
+        os.remove(f)
+
+# check integrity directory and removed 
+def check_integrity_dir(path):
+    for root, dirs, files in os.walk(path, topdown=False):
+        files.sort()
+        # check corrupted files
+        for f in files:
+            check_integrity_file(os.path.join(root, f))
 
 # update postgis
 def send_ncfiles(app, path, product, bbox):
@@ -74,11 +82,13 @@ def send_ncfiles(app, path, product, bbox):
     variables = product_config["variables"]
 
     # check integrity files
-    check_integrity(path)
+    print('\nReading ... ' + path)
+    # check_integrity_file(path)
 
     with dask.config.set(**{'array.slicing.split_large_chunks': True}):
         try:
-            datas = xr.open_mfdataset(path + "/*.nc",
+            #p = path + "/*.nc"
+            datas = xr.open_mfdataset(path,
                                     engine="netcdf4",
                                     group="PRODUCT",
                                     decode_times=True,
@@ -116,7 +126,7 @@ def send_ncfiles(app, path, product, bbox):
                 pdataf = datas_prod.to_dataframe().dropna()
                 s = geopandas.GeoSeries.from_xy(
                     pdataf.latitude, pdataf.longitude,
-                    crs=app.config["S5_CRS"]).buffer(0.035, resolution=4, join_style=1)
+                    crs=app.config["S5_CRS"]) # .buffer(0.035, resolution=4, join_style=1)
 
                 # create geometry from bbox to intersect dataframe
                 p1 = shapely.geometry.box(*bbox, ccw=True)
@@ -130,16 +140,22 @@ def send_ncfiles(app, path, product, bbox):
 
                 # update db to schema warning with all coordinates
                 geodf = geopandas.sjoin(geodf_r, geodf_l)
-                # update db
-                print(geodf.head(5))
                 geodf.to_postgis(product_config["table"],
                                  engine,
                                  schema=app.config["SCHEMA_DB"],
                                  if_exists="append",
                                  chunksize=app.config["CHUNKSIZE"])
-                msg = 'update postgis OK.'
-                logging.info(msg)
-                print(msg)
+                os.remove(path)
+
+                if (len(geodf) > 0):
+                    # update db
+                    print(geodf.head(5))
+                    msg = '\nNuovi dati per inquinante ' + \
+                        product_config["table"] + \
+                            ' aggiornati con Copenicus'
+                    logging.info(msg)
+                    print(msg)
+                    telegram_send.send(messages=[msg])
         except:
             logging.error('Error to open path ' + path)
 
