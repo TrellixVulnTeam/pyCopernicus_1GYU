@@ -142,34 +142,13 @@ def send_ncfiles(app, path, product, bbox):
             # get engine postgresql
             engine = getEngine(app)
 
-            if (len(variables) == 0):
-                datas_q['platform'] = config["platform"]
-                datas_q['description'] = product_config["description"]
-                datas_q['created_at'] = datetime.datetime.now()
-                _update_db(datas_q, bbox, product_config["table"], path, engine)
-            else:
-                for variable in variables:
+            # if (len(variables) == 0):
+            datas_q['platform'] = config["platform"]
+            datas_q['description'] = product_config["description"]
+            datas_q['created_at'] = datetime.datetime.now()
 
-                    # add fields to dataframe
-                    datas_prod = datas_q[variable]
-                    print('--- get variables ' + variable + ' by ' + str(len(datas_prod)) + ' rows.')
-
-                    # https://xarray.pydata.org/en/stable/user-guide/io.html?highlight=_FillValue#scaling-and-type-conversions
-                    # The netCDF data types char, byte, short, int, float or real, and double are all acceptable
-                    datas_prod['delta_time'] = datas_q['delta_time']
-
-                    # copy attributes to new dataframe's fields
-                    for attr in datas_prod.attrs:
-                        datas_prod[attr] = datas_prod.attrs[attr]
-
-                    print('--- copied attributes ' + str(datas_prod.attrs))
-                    
-                    datas_prod['platform'] = config["platform"]
-                    datas_prod['description'] = product_config["description"]
-                    datas_prod['created_at'] = datetime.datetime.now()
-
-                    _update_db(datas_prod, bbox, product_config["table"], path, engine)
-
+            _update_db(datas_q, bbox, product_config["table"], path, engine)
+            
         except OSError as err:
             print("OS error: {0}".format(err))
         except ValueError:
