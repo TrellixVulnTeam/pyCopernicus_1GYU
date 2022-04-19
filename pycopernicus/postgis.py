@@ -1,6 +1,5 @@
 import json
 import pathlib
-from tabnanny import check
 import os
 
 from sqlalchemy import *
@@ -10,6 +9,7 @@ from sqlalchemy.schema import *
 import shapely.geometry
 import xarray as xr
 import geopandas
+import pandas as pd
 import dask
 import logging
 import datetime
@@ -74,6 +74,47 @@ def check_integrity_dir(path):
         for f in files:
             check_integrity_file(os.path.join(root, f))
 
+#
+def _update_db(data, bbox, table, path, engine):
+    # create databrame
+    pdataf = data.to_dataframe().dropna()
+    
+    s = geopandas.GeoSeries.from_xy(
+        pdataf.latitude, pdataf.longitude,
+        crs=app.config["S5_CRS"])  # .buffer(0.035, resolution=4, join_style=1)
+
+    print('--- creating geometries ... ')
+    # create geometry from bbox to intersect dataframe
+    p1 = shapely.geometry.box(*bbox, ccw=True)
+    geodf_l = geopandas.GeoDataFrame(
+        geometry=geopandas.GeoSeries([p1]), crs=app.config["S5_CRS"])
+
+    # ---------------------------------------------------------------
+    # create dataframe with all dataframe's coordinates
+    geodf_r = geopandas.GeoDataFrame(
+        pdataf, geometry=s, crs=app.config["S5_CRS"])
+
+    # update db to schema warning with all coordinates
+    geodf = geopandas.sjoin(geodf_r, geodf_l)
+    print('--- run spatial joins ... ')
+    # geodf = geodf.drop['index_right']
+    geodf.to_postgis(table,
+                     engine,
+                     schema=app.config["SCHEMA_DB"],
+                     if_exists="append",
+                     chunksize=app.config["CHUNKSIZE"])
+    os.remove(path)
+
+    if (len(geodf) > 0):
+        # update db
+        print(geodf.head(5))
+        msg = '\nNuovi dati per inquinante ' + \
+            table + \
+            ' aggiornati.'
+        logging.info(msg)
+        print(msg)
+        telegram_send.send(messages=[msg])
+
 # update postgis
 def send_ncfiles(app, path, product, bbox):
 
@@ -81,13 +122,8 @@ def send_ncfiles(app, path, product, bbox):
     product_config = config[product]
     variables = product_config["variables"]
 
-    # check integrity files
-    print('\nReading ... ' + path)
-    # check_integrity_file(path)
-
     with dask.config.set(**{'array.slicing.split_large_chunks': True}):
         try:
-            #p = path + "/*.nc"
             datas = xr.open_mfdataset(path,
                                     engine="netcdf4",
                                     group="PRODUCT",
@@ -96,68 +132,55 @@ def send_ncfiles(app, path, product, bbox):
                                     decode_coords=True,
                                     parallel=True)
 
+            # check integrity files
+            print('\n --- reading ' + str(len(datas)) + ' rows...')
+
             # select quality data qa_value >= 0.75 
             datas_q = datas.where(datas.qa_value >= 0.75, drop=True)
-            # https://xarray.pydata.org/en/stable/user-guide/io.html?highlight=_FillValue#scaling-and-type-conversions
-            # The netCDF data types char, byte, short, int, float or real, and double are all acceptable
-            datas_q['time_utc'] = datas_q['time_utc'].astype(str)
-            datas_q['delta_time'] = datas_q['delta_time'].astype(str)
+            print('--- filtering values to ' + str(len(datas_q)))
+            
+            # get engine postgresql
+            engine = getEngine(app)
 
-            for variable in variables:
+            if (len(variables) == 0):
+                datas_q['platform'] = config["platform"]
+                datas_q['description'] = product_config["description"]
+                datas_q['created_at'] = datetime.datetime.now()
+                _update_db(datas_q, bbox, product_config["table"], path, engine)
+            else:
+                for variable in variables:
 
-                # add fields to dataframe
-                datas_prod = datas_q[variable]
+                    # add fields to dataframe
+                    datas_prod = datas_q[variable]
+                    print('--- get variables ' + variable + ' by ' + str(len(datas_prod)) + ' rows.')
 
-                datas_prod['time_utc'] = datas_q['time_utc']
-                datas_prod['delta_time'] = datas_q['delta_time']
-                datas_prod['platform'] = config["platform"]
-                datas_prod['description'] = product_config["description"]
-                datas_prod['created_at'] = datetime.datetime.now()
-                datas_prod['ts'] = datetime.datetime.now().timestamp()
+                    # https://xarray.pydata.org/en/stable/user-guide/io.html?highlight=_FillValue#scaling-and-type-conversions
+                    # The netCDF data types char, byte, short, int, float or real, and double are all acceptable
+                    datas_prod['delta_time'] = datas_q['delta_time']
 
-                # copy attributes to new dataframe's fields
-                for attr in datas_prod.attrs:
-                    datas_prod[attr] = datas_prod.attrs[attr]
+                    # copy attributes to new dataframe's fields
+                    for attr in datas_prod.attrs:
+                        datas_prod[attr] = datas_prod.attrs[attr]
 
-                # get engine postgresql
-                engine = getEngine(app)
+                    print('--- copied attributes ' + str(datas_prod.attrs))
+                    
+                    datas_prod['platform'] = config["platform"]
+                    datas_prod['description'] = product_config["description"]
+                    datas_prod['created_at'] = datetime.datetime.now()
 
-                # create databrame
-                pdataf = datas_prod.to_dataframe().dropna()
-                s = geopandas.GeoSeries.from_xy(
-                    pdataf.latitude, pdataf.longitude,
-                    crs=app.config["S5_CRS"]) # .buffer(0.035, resolution=4, join_style=1)
+                    _update_db(datas_prod, bbox, product_config["table"], path, engine)
 
-                # create geometry from bbox to intersect dataframe
-                p1 = shapely.geometry.box(*bbox, ccw=True)
-                geodf_l = geopandas.GeoDataFrame(
-                    geometry=geopandas.GeoSeries([p1]), crs=app.config["S5_CRS"])
-                
-                # ---------------------------------------------------------------
-                # create dataframe with all dataframe's coordinates 
-                geodf_r = geopandas.GeoDataFrame(
-                    pdataf, geometry=s, crs=app.config["S5_CRS"])
-
-                # update db to schema warning with all coordinates
-                geodf = geopandas.sjoin(geodf_r, geodf_l)
-                geodf.to_postgis(product_config["table"],
-                                 engine,
-                                 schema=app.config["SCHEMA_DB"],
-                                 if_exists="append",
-                                 chunksize=app.config["CHUNKSIZE"])
-                os.remove(path)
-
-                if (len(geodf) > 0):
-                    # update db
-                    print(geodf.head(5))
-                    msg = '\nNuovi dati per inquinante ' + \
-                        product_config["table"] + \
-                            ' aggiornati con Copenicus'
-                    logging.info(msg)
-                    print(msg)
-                    telegram_send.send(messages=[msg])
+        except OSError as err:
+            print("OS error: {0}".format(err))
+        except ValueError:
+            print("Could not convert data.")
+        except BaseException as err:
+            print(f"Unexpected {err=}, {type(err)=}")
         except:
-            logging.error('Error to open path ' + path)
+            msg = 'Error to open path ' + path
+            print(msg)
+            logging.error(msg)
+            os.remove(path)
 
 # get geojson from postgis
 def get_GeoJSON(app, product, code, lat, lng):

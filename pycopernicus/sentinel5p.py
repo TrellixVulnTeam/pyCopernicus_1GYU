@@ -21,7 +21,9 @@ def getProduct(product):
         return 'L2__CH4___'
     elif (product == 'HCHO'):
         return 'L2__HCHO__'
-    elif (product == 'AER'):
+    elif (product == 'AER_340_388'):
+        return 'L2__AER_AI'
+    elif (product == 'AER_354_388'):
         return 'L2__AER_AI'
 
 # ----------------------------------------------------------------
@@ -43,15 +45,6 @@ def sentinel5P():
 
     bbox = (float(request.form['xmin']), float(request.form['ymin']),
             float(request.form['xmax']), float(request.form['ymax']))
-
-    #if (test == True):
-    #    print('product:' + product)
-    #    pathFiles = '/Users/gzileni/Git/pyCopernicus/downloads/e1ca1af2-03ea-4912-b383-006e749ccfb1/L2__CO____/'
-    #    send_ncfiles(app, pathFiles, product, bbox)
-    #    return {
-    #        'test': 'Ok'
-    #    }
-    #else:
 
     while end==False:
         # TODO: loop to page loading 
