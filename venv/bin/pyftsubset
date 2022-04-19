@@ -1,4 +1,4 @@
-#!/Users/gzileni/SIT/pyGeoserver/venv/bin/python3
+#!/home/zileni/pyCopernicus/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

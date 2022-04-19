@@ -378,6 +378,14 @@ class TTFont(object):
 		keys = sortedTagList(keys)
 		return ["GlyphOrder"] + keys
 
+	def ensureDecompiled(self):
+		"""Decompile all the tables, even if a TTFont was opened in 'lazy' mode."""
+		for tag in self.keys():
+			table = self[tag]
+			if self.lazy is not False and hasattr(table, "ensureDecompiled"):
+				table.ensureDecompiled()
+		self.lazy = False
+
 	def __len__(self):
 		return len(list(self.keys()))
 
@@ -451,6 +459,8 @@ class TTFont(object):
 		self.glyphOrder = glyphOrder
 		if hasattr(self, '_reverseGlyphOrderDict'):
 			del self._reverseGlyphOrderDict
+		if self.isLoaded("glyf"):
+			self["glyf"].setGlyphOrder(glyphOrder)
 
 	def getGlyphOrder(self):
 		"""Returns a list of glyph names ordered by their position in the font."""
