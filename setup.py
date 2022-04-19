@@ -7,7 +7,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     zip_safe=False,
-    install_requires=['Flask', 'geopandas', 'xmltodict', 'shapely', 
+    install_requires=['Flask', 'geopandas', 'xmltodict', 'shapely', 'telegram-send',
                       'attrs', 'netCDF4', 'SQLAlchemy', 'geoserver-rest', 
                       'GeoAlchemy2', 'xarray', 'numpy', 'pandas', 'requests', 
                       'geopandas', 'dask', 'h5netcdf', 'scipy', 'pygeos']

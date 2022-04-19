@@ -5,7 +5,8 @@ REST API per la gestione di un GeoServer per l'applicazione SIT-WG
 ## Installazione
 
 ```
-git clone http://10.23.8.200:8080/sitdev/pygeoserver.git
+git clone https://github.com/gzileni-copernicus/pyCopernicus.git
+python3 -m venv venv
 . venv/bin/activate
 pip install -e .
 ```
